@@ -1,5 +1,5 @@
 # Behavioral Data
-This Repository includes the main [EEG Dataset](http://predict.cs.unm.edu/downloads.php)] (d006) related extracted data, more details is provided under each dataset name.
+This Repository includes the main [EEG Dataset](http://predict.cs.unm.edu/downloads.php) (d006) related extracted data, more details is provided under each dataset name.
 
 ## Subjects_Behavioral_datas
 
