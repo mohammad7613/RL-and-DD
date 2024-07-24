@@ -1,4 +1,5 @@
 import numpy as np
+from kneed import KneeLocator
 
 def channels_specs(file_loc):
     
@@ -50,9 +51,12 @@ def OrderEstimate_byChannels(Data, channels, max_order, min_order, leap_length):
                 # plt.show()
                 
                 ctr = ctr + 1
-                print(int(ctr / (number_of_channels * (number_of_channels - 1)) * 100), "%", "Estimated Order is", orders[int(np.argmin(BICs))])
 
-                orders_mat[a, b] = orders[int(np.argmin(BICs))]
+                # print(int(ctr / (number_of_channels * (number_of_channels - 1)) * 100), "%", "Estimated Order is", orders[int(np.argmin(BICs))])
+                # orders_mat[a, b] = orders[int(np.argmin(BICs))]
+
+                orders_mat[a, b] = int(KneeLocator(orders, BICs, curve = 'convex', direction = 'decreasing').knee)
+                print(int(ctr / (number_of_channels * (number_of_channels - 1)) * 100), "%", "Estimated Order is", orders_mat[a, b])
                 
     return orders_mat
 
