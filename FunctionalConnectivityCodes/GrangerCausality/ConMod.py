@@ -1,5 +1,6 @@
 import numpy as np
 from kneed import KneeLocator
+from sklearn.linear_model import LinearRegression as LR
 
 def channels_specs(file_loc):
     
@@ -227,7 +228,7 @@ def BIC_calc(y, y_pred, k):
     
     return k * np.log(n) + n * np.log(MSR)
 
-def GrangerCausalityEstimator(Data, channels, window_length, overlap_ratio, orders_mat):
+def GrangerCausalityEstimator(Data, channels, window_length, overlap_ratio, orders_mat, core_method = 'pinv'):
 
     # # This Function calculates the Granger Causality between different channels of Data
     # Data -> m-by-n data matrix, m is number of channels and n is length of data
@@ -260,9 +261,17 @@ def GrangerCausalityEstimator(Data, channels, window_length, overlap_ratio, orde
 
                     est_order = int(orders_mat[i, j])
 
-                    tmp, tmp_err1, tmp_err2 = GC_calc(x_t, y_t, est_order)
+                    if core_method == 'LRB':
 
-                    GC_values[win_step, i, j] = tmp[0]
+                        win_GC_val = LRB_GC_calc(x_t, y_t, est_order)
+
+                    else:
+
+                        tmp, tmp_err1, tmp_err2 = GC_calc(x_t, y_t, est_order)
+
+                        win_GC_val = tmp[0]
+
+                    GC_values[win_step, i, j] = win_GC_val
                     
     return GC_values
 
@@ -478,4 +487,52 @@ def Accuracy_Performance(X):
         Acc.append(1 - np.sum(X[:i]) / (i + 1))
 
     return Acc
+
+def roll_mat_gen(x, k):
+
+    assert x.ndim == 1, "x must be a vector"
+
+    X_rm = []
+
+    N = len(x)
+
+    for i in range(N - k):
+
+        X_rm.append(x[i : i + k])
+
+    return np.array(X_rm)
+
+def LRB_univar_e(x, k):
+
+    assert x.ndim == 1, "x must be a vector"
+
+    X_rm = roll_mat_gen(x, k)
+
+    X_des = x[k:]
+
+    LR_M = LR().fit(X_rm, X_des)
+
+    return 1 - LR_M.score(X_rm, X_des)
+
+def LRB_mulvar_e(x, y, k):
+
+    assert x.ndim == 1 and y.ndim == 1, "x and y must be a vector"
+
+    X_rm = roll_mat_gen(x, k)
+    Y_rm = roll_mat_gen(y, k)
+
+    XY = np.concatenate([X_rm.T, Y_rm.T]).T
+
+    X_des = x[k:]
+
+    LR_M = LR().fit(XY, X_des)
+
+    return 1 - LR_M.score(XY, X_des)
+
+def LRB_GC_calc(x_t, y_t, est_order):
+
+    uve = LRB_univar_e(x_t, est_order)
+    mve = LRB_mulvar_e(x_t, y_t, est_order)
+
+    return np.log(uve / mve)
 
